@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Staff Skill Set</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      padding: 20px; 
+      background: #f8f9fa; 
+    }
+
+    .card {
+      background: white;
+      padding: 20px 25px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin: 0 auto;
+      width: 100%;
+      max-width: 100%;
+      overflow: visible;
+    }
+
+    h1 {
+      margin-bottom: 6px;
+    }
+
+    /* Legend styles */
+    .legend {
+      margin: 10px 0 20px 0;
+      font-size: 0.9em;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+      user-select: none;
+    }
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Table wrapper scroll container */
+    .table-wrapper {
+      overflow-x: auto;
+      position: relative;
+      padding-bottom: 10px;
+    }
+
+    /* Table styles */
+    table { 
+      border-collapse: collapse; 
+      width: 100%; 
+      background: white; 
+      min-width: 700px;
+    }
+
+    th, td { 
+      border: 1px solid #ddd; 
+      padding: 10px; 
+      text-align: left; 
+      vertical-align: middle; 
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    th { 
+      background-color: #f0f0f0; 
+      cursor: pointer; 
+      position: relative;
+    }
+
+    tr:hover { 
+      background-color: #f9f9f9; 
+    }
+
+    /* Static sorting arrows */
+    th .sort-arrow {
+      font-size: 0.7em;
+      margin-left: 6px;
+      color: #666;
+      user-select: none;
+    }
+
+    /* Circle indicators */
+    .circle { 
+      display: inline-block; 
+      width: 14px; 
+      height: 14px; 
+      border-radius: 50%; 
+      margin-right: 4px; 
+      vertical-align: middle; 
+    }
+
+    .intro { background-color: #77C9E7; }
+    .int   { background-color: #2792B9; }
+    .adv   { background-color: #0D4A6B; }
+
+    td span, td { 
+      text-align: left; 
+    }
+
+    /* Sticky first column */
+    #skill-table th:first-child,
+    #skill-table td:first-child {
+      position: sticky;
+      left: 0;
+      background-color: white;
+      background-clip: padding-box;
+      z-index: 3;
+      border-right: 1px solid #ddd;
+      box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
+      font-weight: bold; /* Make names bold */
+      cursor: default; /* no pointer for first column */
+    }
+
+    /* For tbody first column cells lower z-index to keep header on top */
+    #skill-table tbody td:first-child {
+      z-index: 2;
+    }
+
+    /* Responsive legend vertical on small screens */
+    @media (max-width: 700px) {
+      .legend {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Staff Skill Set</h1>
+
+    <div class="legend" aria-label="Skill level legend">
+      <span><span class="circle intro"></span> Introductory</span>
+      <span><span class="circle intro"></span><span class="circle int"></span> Intermediate</span>
+      <span><span class="circle intro"></span><span class="circle int"></span><span class="circle adv"></span> Advanced</span>
+    </div>
+
+    <div class="table-wrapper" aria-label="Scrollable skill table container">
+      <table id="skill-table" aria-label="Staff skill set table">
+        <thead>
+          <tr>
+            <!-- Headers dynamically generated -->
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="8">Loading data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script>
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSIueU0MxpiJdL7nD_cCq014yb3UeIhDF8-y8E9FE1kgTbmKq-mtgpBUDUKqnOC4SvgS1QGw1cfO8JS/pub?gid=0&single=true&output=csv';
+    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(sheetUrl);
+    const CACHE_KEY = 'sheetData';
+    const CACHE_TTL = 1000 * 60 * 60; // 1 hour
+    let currentData = [];
+    let sortDirection = 1; // 1 = ascending, -1 = descending
+    let currentSortColumn = null;
+
+    const initialData = [
+      { Name: "Zoe", Excel: "intermediate", ArcGIS: "intermediate", QGIS: "beginner", Stata: "intermediate", R: "advanced", Python: "beginner", Tableau: "beginner", SPSS: "" },
+      { Name: "Rayhana", Excel: "beginner", ArcGIS: "intermediate", QGIS: "intermediate", Stata: "beginner", R: "intermediate", Python: "advanced", Tableau: "beginner", SPSS: "" },
+      { Name: "Rika", Excel: "advanced", ArcGIS: "beginner", QGIS: "beginner", Stata: "intermediate", R: "advanced", Python: "advanced", Tableau: "beginner", SPSS: "" },
+      { Name: "Susana", Excel: "intermediate", ArcGIS: "advanced", QGIS: "advanced", Stata: "beginner", R: "beginner", Python: "beginner", Tableau: "beginner", SPSS: "" },
+      { Name: "Thea", Excel: "intermediate", ArcGIS: "advanced", QGIS: "beginner", Stata: "intermediate", R: "beginner", Python: "beginner", Tableau: "beginner", SPSS: "" },
+      { Name: "Noura", Excel: "intermediate", ArcGIS: "beginner", QGIS: "beginner", Stata: "intermediate", R: "advanced", Python: "beginner", Tableau: "beginner", SPSS: "" },
+      { Name: "Madeleine", Excel: "beginner", ArcGIS: "advanced", QGIS: "beginner", Stata: "beginner", R: "beginner", Python: "beginner", Tableau: "beginner", SPSS: "" },
+      { Name: "Elizabeth", Excel: "beginner", ArcGIS: "advanced", QGIS: "beginner", Stata: "beginner", R: "beginner", Python: "beginner", Tableau: "beginner", SPSS: "" },
+      { Name: "Michaela (GA)", Excel: "advanced", ArcGIS: "", QGIS: "", Stata: "", R: "advanced", Python: "", Tableau: "", SPSS: "" },
+      { Name: "Ines (AD)", Excel: "advanced", ArcGIS: "", QGIS: "beginner", Stata: "intermediate", R: "advanced", Python: "", Tableau: "", SPSS: "" },
+      { Name: "Fatima (Senior AD)", Excel: "advanced", ArcGIS: "advanced", QGIS: "advanced", Stata: "advanced", R: "advanced", Python: "advanced", Tableau: "intermediate", SPSS: "" }
+    ];
+
+    function skillToCircles(skill) {
+      if (!skill) return '';
+      const val = skill.trim().toLowerCase();
+      if (val.startsWith('intro') || val==='beginner') {
+        return '<span class="circle intro"></span>';
+      }
+      if (val.startsWith('inter') || val === 'int') {
+        return '<span class="circle intro"></span><span class="circle int"></span>';
+      }
+      if (val.startsWith('adv')) {
+        return '<span class="circle intro"></span><span class="circle int"></span><span class="circle adv"></span>';
+      }
+      return skill;
+    }
+
+    function renderTable(data) {
+      if (!data.length) return;
+      currentData = data;
+
+      const headers = Object.keys(data[0]);
+      const thead = document.querySelector('#skill-table thead');
+      thead.innerHTML = '';
+
+      const headerRow = document.createElement('tr');
+
+      headers.forEach((h, idx) => {
+        const th = document.createElement('th');
+        th.textContent = h;
+
+        if (idx !== 0) {
+          const arrow = document.createElement('span');
+          arrow.className = 'sort-arrow';
+          arrow.textContent = '↕';
+          th.appendChild(arrow);
+          th.style.cursor = 'pointer';
+          th.addEventListener('click', () => sortTable(idx));
+        } else {
+          // no sorting on first column
+          th.style.cursor = 'default';
+        }
+
+        headerRow.appendChild(th);
+      });
+
+      thead.appendChild(headerRow);
+
+      const tbody = document.querySelector('#skill-table tbody');
+      tbody.innerHTML = '';
+
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        headers.forEach((h, i) => {
+          const td = document.createElement('td');
+          td.innerHTML = i === 0 ? row[h] : skillToCircles(row[h]);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    function sortTable(columnIndex) {
+      const headers = Object.keys(currentData[0]);
+      const key = headers[columnIndex];
+
+      if (currentSortColumn === columnIndex) {
+        sortDirection *= -1;
+      } else {
+        currentSortColumn = columnIndex;
+        sortDirection = 1;
+      }
+
+      currentData.sort((a, b) => {
+        const valA = a[key] ? a[key].toString().toLowerCase() : '';
+        const valB = b[key] ? b[key].toString().toLowerCase() : '';
+        return valA.localeCompare(valB) * sortDirection;
+      });
+
+      renderTable(currentData);
+    }
+
+    function loadFromCache() {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (!cached) return null;
+      try {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp > CACHE_TTL) return null;
+        return data;
+      } catch {
+        return null;
+      }
+    }
+
+    function saveToCache(data) {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
+    }
+
+    const cachedData = loadFromCache();
+    if (cachedData) {
+      renderTable(cachedData);
+    }
+    else{
+    renderTable(initialData);
+    }
+    
+    fetch(proxyUrl)
+      .then(res => res.text())
+      .then(csvText => {
+        const results = Papa.parse(csvText.trim(), { header: true });
+        saveToCache(results.data);
+        renderTable(results.data);
+      })
+      .catch(err => {
+        if (!cachedData) {
+          document.querySelector('#skill-table tbody').innerHTML =
+            `<tr><td colspan="8">Error loading data: ${err.message}</td></tr>`;
+        }
+      });
+  </script>
+</body>
+</html>
