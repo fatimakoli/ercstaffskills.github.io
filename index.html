@@ -190,7 +190,7 @@
     }
 
     function renderTable(data) {
-      if (!data.length) return;
+      if (!data.length) renderTable(initialData);
       currentData = data;
 
       const headers = Object.keys(data[0]);
